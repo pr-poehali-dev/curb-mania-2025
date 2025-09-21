@@ -45,6 +45,9 @@ const CurbMania = () => {
   const [selectedCurb, setSelectedCurb] = useState<Curb | null>(null);
   const [isSearchingDefects, setIsSearchingDefects] = useState(false);
   const [foundDefects, setFoundDefects] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<string[]>([]);
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(true);
 
   const defectsList = [
     "Критическая микротрещина",
@@ -56,6 +59,28 @@ const CurbMania = () => {
     "Потенциальная угроза безопасности",
     "Неэстетичный внешний вид"
   ];
+
+  const getCurbEmoji = (type: string) => {
+    switch (type) {
+      case 'concrete': return '🧱';
+      case 'granite': return '🗿';
+      case 'marble': return '⚪';
+      case 'plastic': return '🟡';
+      case 'gold': return '🏆';
+      default: return '🏗️';
+    }
+  };
+
+  const getCurbGradient = (type: string) => {
+    switch (type) {
+      case 'concrete': return 'from-gray-600 to-gray-400';
+      case 'granite': return 'from-slate-700 to-slate-500';
+      case 'marble': return 'from-white to-gray-200';
+      case 'plastic': return 'from-yellow-500 to-orange-400';
+      case 'gold': return 'from-yellow-500 to-yellow-300';
+      default: return 'from-gray-500 to-gray-300';
+    }
+  };
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
@@ -90,25 +115,38 @@ const CurbMania = () => {
     }, 2000);
   };
 
-  const replaceCurb = (newMaterial: string, newPrice: number) => {
+  const replaceCurb = (newMaterial: string, newPrice: number, newType: string) => {
     if (selectedCurb && gameState.budget >= newPrice) {
       const kickback = Math.floor(newPrice * 0.25);
+      const actualCost = newPrice - kickback;
       
       setCurbs(prev => prev.map(curb => 
         curb.id === selectedCurb.id 
-          ? { ...curb, condition: 'new', material: newMaterial, price: newPrice }
+          ? { ...curb, condition: 'new', material: newMaterial, price: newPrice, type: newType }
           : curb
       ));
       
       setGameState(prev => ({
         ...prev,
-        budget: prev.budget - newPrice + kickback,
-        reputation: Math.min(100, prev.reputation + 5),
+        budget: prev.budget - actualCost,
+        reputation: Math.min(100, prev.reputation + (foundDefects.length * 2)),
         corruption: prev.corruption + kickback
       }));
       
+      setTotalSpent(prev => prev + actualCost);
+      
+      addNotification(`🎉 Заменили ${selectedCurb.material} на ${newMaterial}! Откат: ${kickback.toLocaleString()}₽`);
+      
       setSelectedCurb(null);
+      setFoundDefects([]);
     }
+  };
+
+  const addNotification = (message: string) => {
+    setNotifications(prev => [message, ...prev.slice(0, 2)]);
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(0, -1));
+    }, 5000);
   };
 
   useEffect(() => {
@@ -172,20 +210,54 @@ const CurbMania = () => {
         </p>
       </div>
 
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {notifications.map((notification, index) => (
+            <div key={index} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg animate-fade-in">
+              {notification}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tutorial overlay */}
+      {showTutorial && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+          <Card className="max-w-md bg-card p-6">
+            <h3 className="text-xl font-bold mb-4">👨‍💼 Добро пожаловать в должность!</h3>
+            <div className="space-y-3 text-sm">
+              <p>🎯 <strong>Цель:</strong> Освоить бюджет, заменив старые бордюры</p>
+              <p>💰 <strong>Бюджет:</strong> 10 млн рублей на год</p>
+              <p>🔍 <strong>Как играть:</strong></p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Кликайте на бордюры для проверки</li>
+                <li>Ищите дефекты для оправдания замены</li>
+                <li>Выбирайте дорогие материалы для больших откатов</li>
+                <li>Следите за репутацией и сроками выборов</li>
+              </ul>
+            </div>
+            <Button className="w-full mt-4" onClick={() => setShowTutorial(false)}>
+              Начать карьеру чиновника! 🚀
+            </Button>
+          </Card>
+        </div>
+      )}
+
       {/* Game field */}
       <div className="max-w-4xl mx-auto px-4">
         <div className="grid grid-cols-3 gap-4 mb-8">
           {curbs.map((curb) => (
             <Dialog key={curb.id}>
               <DialogTrigger asChild>
-                <Card className="curb-item" onClick={() => setSelectedCurb(curb)}>
+                <Card className={`curb-item bg-gradient-to-br ${getCurbGradient(curb.type)}`} onClick={() => setSelectedCurb(curb)}>
                   <div className="text-center">
-                    <div className="text-4xl mb-2">🏗️</div>
+                    <div className="text-4xl mb-2">{getCurbEmoji(curb.type)}</div>
                     <Badge className={`${getConditionColor(curb.condition)} text-white mb-2`}>
                       {getConditionText(curb.condition)}
                     </Badge>
-                    <p className="font-semibold text-sm">{curb.material}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-semibold text-sm text-black">{curb.material}</p>
+                    <p className="text-xs text-gray-700">
                       {curb.price.toLocaleString()}₽
                     </p>
                   </div>
@@ -202,11 +274,12 @@ const CurbMania = () => {
                 
                 <div className="space-y-4">
                   <div className="text-center">
-                    <div className="text-6xl mb-2">🏗️</div>
-                    <Badge className={`${getConditionColor(curb.condition)} text-white mb-2`}>
-                      {getConditionText(curb.condition)}
+                    <div className="text-6xl mb-2">{getCurbEmoji(selectedCurb?.type || 'concrete')}</div>
+                    <Badge className={`${getConditionColor(selectedCurb?.condition || 'old')} text-white mb-2`}>
+                      {getConditionText(selectedCurb?.condition || 'old')}
                     </Badge>
-                    <p className="font-semibold">{curb.material} бордюр</p>
+                    <p className="font-semibold">{selectedCurb?.material} бордюр</p>
+                    <p className="text-sm text-muted-foreground">Текущая стоимость: {selectedCurb?.price.toLocaleString()}₽</p>
                   </div>
 
                   <div className="space-y-2">
@@ -232,23 +305,34 @@ const CurbMania = () => {
                       </div>
                     )}
 
-                    <Button 
-                      className="game-button w-full"
-                      onClick={() => replaceCurb('Премиум гранитный', 15000)}
-                      disabled={gameState.budget < 15000}
-                    >
-                      <Icon name="Hammer" className="mr-2" />
-                      Заменить (15,000₽)
-                    </Button>
-                    
-                    <Button 
-                      className="game-button w-full"
-                      onClick={() => replaceCurb('Золотой с подогревом', 50000)}
-                      disabled={gameState.budget < 50000}
-                    >
-                      <Icon name="Crown" className="mr-2" />
-                      VIP замена (50,000₽)
-                    </Button>
+                    <div className="grid grid-cols-1 gap-2">
+                      <Button 
+                        className="game-button w-full bg-gradient-to-r from-slate-600 to-slate-400"
+                        onClick={() => replaceCurb('Премиум гранитный', 15000, 'granite')}
+                        disabled={gameState.budget < 15000}
+                      >
+                        <Icon name="Hammer" className="mr-2" />
+                        🗿 Гранит (15,000₽) | Откат: 3,750₽
+                      </Button>
+                      
+                      <Button 
+                        className="game-button w-full bg-gradient-to-r from-white to-gray-200 text-black"
+                        onClick={() => replaceCurb('Элитный мраморный', 25000, 'marble')}
+                        disabled={gameState.budget < 25000}
+                      >
+                        <Icon name="Crown" className="mr-2" />
+                        ⚪ Мрамор (25,000₽) | Откат: 6,250₽
+                      </Button>
+                      
+                      <Button 
+                        className="game-button w-full bg-gradient-to-r from-yellow-500 to-yellow-300 text-black"
+                        onClick={() => replaceCurb('Золотой с подогревом', 50000, 'gold')}
+                        disabled={gameState.budget < 50000}
+                      >
+                        <Icon name="Zap" className="mr-2" />
+                        🏆 VIP Золото (50,000₽) | Откат: 12,500₽
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </DialogContent>
@@ -258,15 +342,15 @@ const CurbMania = () => {
 
         {/* Action buttons */}
         <div className="flex justify-center gap-4 mb-8">
-          <Button className="game-button">
+          <Button className="game-button" onClick={() => addNotification('🔧 Конструктор в разработке!')}>
             <Icon name="Settings" className="mr-2" />
             Конструктор бордюров
           </Button>
-          <Button className="game-button">
+          <Button className="game-button" onClick={() => addNotification('👥 Подрядчики скоро будут!')}>
             <Icon name="Users" className="mr-2" />
             Подрядчики
           </Button>
-          <Button className="game-button">
+          <Button className="game-button" onClick={() => addNotification('🏆 Система достижений готовится!')}>
             <Icon name="Trophy" className="mr-2" />
             Достижения
           </Button>
@@ -277,9 +361,12 @@ const CurbMania = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
               <Icon name="TrendingUp" className="mx-auto mb-2 text-primary" />
-              <p className="text-sm text-muted-foreground">Освоено бюджета</p>
+              <p className="text-sm text-muted-foreground">Потрачено</p>
               <p className="text-xl font-bold">
-                {((10000000 - gameState.budget) / 10000000 * 100).toFixed(1)}%
+                {totalSpent.toLocaleString()}₽
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {(totalSpent / 10000000 * 100).toFixed(1)}% от бюджета
               </p>
             </div>
             <div>
@@ -288,12 +375,18 @@ const CurbMania = () => {
               <p className="text-xl font-bold">
                 {gameState.corruption.toLocaleString()}₽
               </p>
+              <p className="text-xs text-muted-foreground">
+                Личная выгода 💰
+              </p>
             </div>
             <div>
               <Icon name="Award" className="mx-auto mb-2 text-secondary" />
               <p className="text-sm text-muted-foreground">Бордюров заменено</p>
               <p className="text-xl font-bold">
-                {curbs.filter(c => c.condition === 'new').length}
+                {curbs.filter(c => c.condition === 'new').length}/9
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Прогресс работ
               </p>
             </div>
           </div>
