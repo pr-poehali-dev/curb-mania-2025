@@ -1,29 +1,31 @@
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 20 14% 4%;
+    --foreground: 0 0% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 20 14% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 20 14% 8%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 18 86% 60%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 269 55% 65%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 20 14% 12%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 45 93% 58%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -97,5 +99,49 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Rubik", sans-serif;
+  }
+}
+
+@layer components {
+  .game-button {
+    @apply bg-gradient-to-r from-primary to-secondary text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 relative overflow-hidden;
+  }
+
+  .game-button::before {
+    content: "";
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 transition-opacity duration-500;
+    transform: translateX(-100%);
+  }
+
+  .game-button:hover::before {
+    @apply opacity-20;
+    animation: shimmer 1s ease-in-out;
+  }
+
+  .holographic {
+    background: linear-gradient(
+      45deg,
+      #ff6b35,
+      #4ecdc4,
+      #45b7d1,
+      #9b59b6,
+      #ff6b35
+    );
+    background-size: 400% 400%;
+    @apply animate-rainbow;
+  }
+
+  .resource-panel {
+    @apply bg-gradient-to-br from-card to-muted backdrop-blur-sm border border-primary/20 rounded-xl p-4;
+  }
+
+  .curb-item {
+    @apply bg-card border-2 border-muted rounded-lg p-4 transition-all duration-300 cursor-pointer relative overflow-hidden;
+  }
+
+  .curb-item:hover {
+    @apply border-primary scale-105 shadow-lg;
+    animation: pulse-glow 1s ease-in-out;
   }
 }
