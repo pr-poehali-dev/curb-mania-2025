@@ -4,8 +4,9 @@ import { Dialog } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useTelegram } from '@/hooks/useTelegram';
 
-import { GameState, Curb, Contractor, CurbConfig } from '@/types/game';
+import { GameState, Curb, Contractor, CurbConfig, Upgrade } from '@/types/game';
 import { contractors } from '@/data/contractors';
+import { upgrades } from '@/data/upgrades';
 import { generateDefects } from '@/utils/gameUtils';
 
 import { GameHeader } from '@/components/game/GameHeader';
@@ -17,6 +18,8 @@ import { CurbDialog } from '@/components/game/CurbDialog';
 import { ContractorDialog } from '@/components/game/ContractorDialog';
 import { CurbConstructorDialog } from '@/components/game/CurbConstructorDialog';
 import { GameStatistics } from '@/components/game/GameStatistics';
+import { ClickerButton } from '@/components/game/ClickerButton';
+import { UpgradeShop } from '@/components/game/UpgradeShop';
 
 const CurbMania = () => {
   const { user, isTelegramWebApp, hapticFeedback, showAlert, shareToChat } = useTelegram();
@@ -25,7 +28,11 @@ const CurbMania = () => {
     budget: 10000000,
     daysUntilElection: 365,
     reputation: 75,
-    corruption: 0
+    corruption: 0,
+    clickPower: 10,
+    autoClickRate: 0,
+    totalClicks: 0,
+    premiumCurrency: 0
   });
 
   const [curbs, setCurbs] = useState<Curb[]>([
@@ -54,6 +61,10 @@ const CurbMania = () => {
     basePrice: 1000,
     extras: {}
   });
+  const [playerUpgrades, setPlayerUpgrades] = useState<Upgrade[]>(
+    upgrades.map(u => ({ ...u, currentLevel: 0 }))
+  );
+  const [showUpgradeShop, setShowUpgradeShop] = useState(false);
 
   const searchForDefects = () => {
     setIsSearchingDefects(true);
@@ -137,6 +148,103 @@ const CurbMania = () => {
     );
   };
 
+  // Кликер функции
+  const handleClick = () => {
+    hapticFeedback();
+    const multiplier = getMultiplier();
+    const income = gameState.clickPower * multiplier;
+    
+    setGameState(prev => ({
+      ...prev,
+      corruption: prev.corruption + income,
+      totalClicks: prev.totalClicks + 1
+    }));
+    
+    addNotification(`💰 +${income.toLocaleString()}₽`);
+  };
+
+  const getMultiplier = () => {
+    return playerUpgrades
+      .filter(u => u.effect.type === 'multiplier' && u.currentLevel > 0)
+      .reduce((acc, u) => acc * Math.pow(u.effect.value, u.currentLevel), 1);
+  };
+
+  const buyUpgrade = (upgradeId: string) => {
+    const upgrade = playerUpgrades.find(u => u.id === upgradeId);
+    if (!upgrade) return;
+
+    const canAfford = upgrade.costType === 'corruption' 
+      ? gameState.corruption >= upgrade.cost 
+      : gameState.premiumCurrency >= upgrade.cost;
+
+    if (!canAfford || (upgrade.maxLevel && upgrade.currentLevel >= upgrade.maxLevel)) {
+      return;
+    }
+
+    hapticFeedback();
+
+    // Обновляем состояние игры
+    setGameState(prev => ({
+      ...prev,
+      corruption: upgrade.costType === 'corruption' 
+        ? prev.corruption - upgrade.cost 
+        : prev.corruption,
+      premiumCurrency: upgrade.costType === 'premium' 
+        ? prev.premiumCurrency - upgrade.cost 
+        : prev.premiumCurrency,
+      clickPower: upgrade.effect.type === 'clickPower' 
+        ? prev.clickPower + upgrade.effect.value 
+        : prev.clickPower,
+      autoClickRate: upgrade.effect.type === 'autoClick' 
+        ? prev.autoClickRate + upgrade.effect.value 
+        : prev.autoClickRate
+    }));
+
+    // Обновляем улучшения
+    setPlayerUpgrades(prev => 
+      prev.map(u => 
+        u.id === upgradeId 
+          ? { ...u, currentLevel: u.currentLevel + 1, cost: Math.floor(u.cost * 1.5) }
+          : u
+      )
+    );
+
+    addNotification(`✅ Куплено: ${upgrade.name}!`);
+  };
+
+  const buyPremium = () => {
+    if (isTelegramWebApp) {
+      // Интеграция с Telegram Stars
+      window.Telegram?.WebApp.showAlert(
+        'Покупка звезд пока недоступна в демо-версии. В полной версии здесь будет интеграция с Telegram Stars!'
+      );
+    } else {
+      // Для демо - даем бесплатно
+      setGameState(prev => ({
+        ...prev,
+        premiumCurrency: prev.premiumCurrency + 100
+      }));
+      addNotification('🎁 Получено 100 звезд (демо режим)!');
+    }
+  };
+
+  // Автокликер
+  useEffect(() => {
+    if (gameState.autoClickRate > 0) {
+      const autoClicker = setInterval(() => {
+        const multiplier = getMultiplier();
+        const income = gameState.autoClickRate * multiplier;
+        
+        setGameState(prev => ({
+          ...prev,
+          corruption: prev.corruption + income
+        }));
+      }, 1000);
+
+      return () => clearInterval(autoClicker);
+    }
+  }, [gameState.autoClickRate, playerUpgrades]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setGameState(prev => ({
@@ -162,6 +270,12 @@ const CurbMania = () => {
       <GameTitle />
 
       <div className="max-w-4xl mx-auto px-2 sm:px-4">
+        {/* Кликер секция */}
+        <ClickerButton 
+          onClick={handleClick}
+          clickPower={gameState.clickPower * getMultiplier()}
+        />
+
         <GameGrid 
           curbs={curbs}
           onSelectCurb={setSelectedCurb}
@@ -178,6 +292,10 @@ const CurbMania = () => {
         </Dialog>
 
         <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mb-6 sm:mb-8 px-2">
+          <Button className="game-button" onClick={() => setShowUpgradeShop(true)}>
+            <Icon name="ShoppingCart" className="mr-2" />
+            Магазин улучшений
+          </Button>
           <Button className="game-button" onClick={() => setShowCurbConstructor(true)}>
             <Icon name="Settings" className="mr-2" />
             Конструктор бордюров
@@ -228,6 +346,16 @@ const CurbMania = () => {
         calculateFinalPrice={calculateFinalPrice}
         onReplaceCurb={handleReplaceCurb}
         budget={gameState.budget}
+      />
+
+      <UpgradeShop
+        showUpgradeShop={showUpgradeShop}
+        onClose={() => setShowUpgradeShop(false)}
+        upgrades={playerUpgrades}
+        corruption={gameState.corruption}
+        premiumCurrency={gameState.premiumCurrency}
+        onBuyUpgrade={buyUpgrade}
+        onBuyPremium={buyPremium}
       />
     </div>
   );

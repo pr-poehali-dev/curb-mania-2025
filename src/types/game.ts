@@ -3,6 +3,25 @@ export interface GameState {
   daysUntilElection: number;
   reputation: number;
   corruption: number;
+  clickPower: number;
+  autoClickRate: number;
+  totalClicks: number;
+  premiumCurrency: number; // Звезды Telegram
+}
+
+export interface Upgrade {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  costType: 'corruption' | 'premium';
+  effect: {
+    type: 'clickPower' | 'autoClick' | 'multiplier';
+    value: number;
+  };
+  icon: string;
+  maxLevel?: number;
+  currentLevel: number;
 }
 
 export interface Curb {
