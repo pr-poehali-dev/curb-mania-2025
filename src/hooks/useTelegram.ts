@@ -7,6 +7,7 @@ interface TelegramUser {
   last_name?: string;
   username?: string;
   language_code?: string;
+  photo_url?: string;
 }
 
 interface UseTelegramReturn {
@@ -40,6 +41,10 @@ export const useTelegram = (): UseTelegramReturn => {
       WebApp.setHeaderColor('#1a1a1a');
       WebApp.setBackgroundColor('#0a0a0a');
       WebApp.expand();
+      
+      // Включаем вертикальные свайпы для Telegram 2025
+      WebApp.enableClosingConfirmation();
+      WebApp.disableVerticalSwipes();
       
       // Получение данных пользователя
       if (WebApp.initDataUnsafe?.user) {
