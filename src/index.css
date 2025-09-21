@@ -172,4 +172,59 @@
     border: 1px solid rgba(255, 107, 53, 0.3);
     box-shadow: 0 0 15px rgba(255, 107, 53, 0.2);
   }
+
+  /* Mobile adaptations */
+  @media (max-width: 768px) {
+    .curb-item {
+      @apply p-3 rounded-lg;
+    }
+
+    .game-grid {
+      @apply gap-2;
+    }
+
+    .resource-glow {
+      @apply mx-2 mt-2 p-3;
+    }
+
+    .game-button {
+      @apply text-sm px-3 py-2;
+    }
+
+    .neon-glow {
+      @apply text-sm;
+    }
+  }
+
+  /* Touch-friendly button sizes for mobile */
+  @media (max-width: 640px) {
+    .game-button {
+      @apply min-h-[44px] text-base;
+    }
+
+    .curb-item {
+      @apply min-h-[120px] p-2;
+    }
+
+    .dialog-content {
+      @apply mx-2 max-h-[90vh];
+    }
+
+    .holographic {
+      @apply text-4xl;
+    }
+  }
+
+  /* Telegram WebApp specific styles */
+  .telegram-webapp {
+    @apply bg-black text-white;
+  }
+
+  .telegram-webapp .game-button {
+    @apply bg-[#2481cc] hover:bg-[#1c6ba0] border-[#2481cc];
+  }
+
+  .telegram-webapp .resource-glow {
+    @apply bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] border border-[#3d3d3d];
+  }
 }

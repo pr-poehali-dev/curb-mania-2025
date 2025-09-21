@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
+import { useTelegram } from '@/hooks/useTelegram';
 
 import { GameState, Curb, Contractor, CurbConfig } from '@/types/game';
 import { contractors } from '@/data/contractors';
@@ -18,6 +19,8 @@ import { CurbConstructorDialog } from '@/components/game/CurbConstructorDialog';
 import { GameStatistics } from '@/components/game/GameStatistics';
 
 const CurbMania = () => {
+  const { user, isTelegramWebApp, hapticFeedback, showAlert, shareToChat } = useTelegram();
+  
   const [gameState, setGameState] = useState<GameState>({
     budget: 10000000,
     daysUntilElection: 365,
@@ -54,12 +57,14 @@ const CurbMania = () => {
 
   const searchForDefects = () => {
     setIsSearchingDefects(true);
+    hapticFeedback();
     
     setTimeout(() => {
       const defects = generateDefects();
       setFoundDefects(defects);
       setIsSearchingDefects(false);
       addNotification(`🔍 Найдено дефектов: ${defects.length}`);
+      hapticFeedback();
     }, 2000);
   };
 
@@ -144,7 +149,7 @@ const CurbMania = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background text-foreground font-['Rubik']">
+    <div className={`min-h-screen bg-gradient-to-br from-background via-muted to-background text-foreground font-['Rubik'] ${isTelegramWebApp ? 'telegram-webapp' : ''}`}>
       <GameHeader gameState={gameState} />
       
       <Notifications notifications={notifications} />
@@ -156,7 +161,7 @@ const CurbMania = () => {
 
       <GameTitle />
 
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4">
         <GameGrid 
           curbs={curbs}
           onSelectCurb={setSelectedCurb}
@@ -172,7 +177,7 @@ const CurbMania = () => {
           />
         </Dialog>
 
-        <div className="flex justify-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mb-6 sm:mb-8 px-2">
           <Button className="game-button" onClick={() => setShowCurbConstructor(true)}>
             <Icon name="Settings" className="mr-2" />
             Конструктор бордюров
@@ -181,6 +186,21 @@ const CurbMania = () => {
             <Icon name="Trophy" className="mr-2" />
             Достижения
           </Button>
+          {isTelegramWebApp && user && (
+            <Button 
+              className="game-button" 
+              onClick={() => {
+                const score = gameState.corruption + (gameState.reputation * 100);
+                shareToChat(
+                  window.location.href,
+                  `🏆 Мой результат в "Бордюр Мания 2025": ${score.toLocaleString()} очков! Откатов: ${gameState.corruption.toLocaleString()}₽`
+                );
+              }}
+            >
+              <Icon name="Share" className="mr-2" />
+              Поделиться
+            </Button>
+          )}
         </div>
 
         <GameStatistics 

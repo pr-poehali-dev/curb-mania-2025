@@ -10,13 +10,13 @@ interface GameHeaderProps {
 
 export const GameHeader: React.FC<GameHeaderProps> = ({ gameState }) => {
   return (
-    <div className="resource-glow mx-4 mt-4 rounded-xl p-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+    <div className="resource-glow mx-2 sm:mx-4 mt-2 sm:mt-4 rounded-xl p-3 sm:p-4 animate-fade-in">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 text-center">
         <div>
-          <Icon name="Coins" className="mx-auto mb-2 text-yellow-500" />
-          <p className="text-sm text-muted-foreground">Бюджет</p>
-          <p className="text-xl font-bold text-yellow-500 neon-glow">
-            {gameState.budget.toLocaleString()}₽
+          <Icon name="Coins" className="mx-auto mb-1 sm:mb-2 text-yellow-500" size={20} />
+          <p className="text-xs sm:text-sm text-muted-foreground">Бюджет</p>
+          <p className="text-sm sm:text-xl font-bold text-yellow-500 neon-glow">
+            {(gameState.budget / 1000000).toFixed(1)}М₽
           </p>
           <Progress 
             value={(gameState.budget / 10000000) * 100} 
