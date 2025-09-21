@@ -163,7 +163,7 @@ const CurbMania = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background text-foreground font-['Rubik']">
       {/* Header with resources */}
-      <div className="resource-panel mx-4 mt-4">
+      <div className="resource-glow mx-4 mt-4 rounded-xl p-4">
         <div className="flex flex-wrap gap-4 justify-between items-center">
           <div className="flex items-center gap-2">
             <Icon name="Banknote" className="text-primary" />
@@ -202,7 +202,7 @@ const CurbMania = () => {
 
       {/* Game title */}
       <div className="text-center py-8">
-        <h1 className="text-5xl font-bold font-['Oswald'] holographic text-transparent bg-clip-text mb-2">
+        <h1 className="text-6xl font-bold font-['Oswald'] holographic text-transparent bg-clip-text mb-2 neon-glow animate-pulse">
           БОРДЮР МАНИЯ 2025
         </h1>
         <p className="text-lg text-muted-foreground">
@@ -246,22 +246,22 @@ const CurbMania = () => {
 
       {/* Game field */}
       <div className="max-w-4xl mx-auto px-4">
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8 game-grid">
           {curbs.map((curb) => (
             <Dialog key={curb.id}>
               <DialogTrigger asChild>
-                <Card className={`curb-item bg-gradient-to-br ${getCurbGradient(curb.type)}`} onClick={() => setSelectedCurb(curb)}>
+                <div className="curb-item" onClick={() => setSelectedCurb(curb)}>
                   <div className="text-center">
-                    <div className="text-4xl mb-2">{getCurbEmoji(curb.type)}</div>
-                    <Badge className={`${getConditionColor(curb.condition)} text-white mb-2`}>
+                    <div className="text-5xl mb-2 animate-float">{getCurbEmoji(curb.type)}</div>
+                    <Badge className={`${getConditionColor(curb.condition)} text-white mb-2 neon-glow`}>
                       {getConditionText(curb.condition)}
                     </Badge>
-                    <p className="font-semibold text-sm text-black">{curb.material}</p>
-                    <p className="text-xs text-gray-700">
+                    <p className="font-semibold text-sm text-white neon-glow">{curb.material}</p>
+                    <p className="text-xs text-primary font-bold">
                       {curb.price.toLocaleString()}₽
                     </p>
                   </div>
-                </Card>
+                </div>
               </DialogTrigger>
               
               <DialogContent className="max-w-md">
@@ -357,7 +357,7 @@ const CurbMania = () => {
         </div>
 
         {/* Statistics */}
-        <Card className="resource-panel">
+        <div className="resource-glow rounded-xl p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
               <Icon name="TrendingUp" className="mx-auto mb-2 text-primary" />
@@ -390,7 +390,7 @@ const CurbMania = () => {
               </p>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );
